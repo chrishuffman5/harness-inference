@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inference is not a Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4EFE6;
+    --paper-2:#EBE4D6;
+    --ink:#16130E;
+    --ink-2:#3A352B;
+    --mute:#76705F;
+    --rule:#1614100f;
+    --rule-strong:#16131022;
+    --inference:#2A4FB8;
+    --inference-soft:#2A4FB81a;
+    --harness:#C95A1E;
+    --harness-soft:#C95A1E1a;
+    --ok:#1E7A4B;
+    --warn:#A66A00;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased}
+  .deck{width:100vw;height:100vh;overflow:hidden;position:relative}
+  .slide{
+    position:absolute;inset:0;
+    padding:6vh 8vw;
+    display:none;
+    flex-direction:column;
+    background:var(--paper);
+    opacity:0;
+    transition:opacity .18s ease;
+  }
+  .slide.active{display:flex;opacity:1}
+  .slide.dark{background:var(--ink);color:var(--paper)}
+  .slide.dark .mute{color:#a09a8a}
+  .slide.dark .rule{border-color:#ffffff14}
+
+  /* Topbar */
+  .topbar{
+    position:absolute;top:0;left:0;right:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 24px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+    pointer-events:none;z-index:5;
+  }
+  .topbar .brand{display:flex;align-items:center;gap:10px}
+  .topbar .dot{width:6px;height:6px;border-radius:50%;background:var(--harness)}
+  .slide.dark .topbar{color:#8e8775}
+
+  /* Progress + counter */
+  .progress{position:absolute;top:0;left:0;height:2px;background:var(--harness);width:0;transition:width .2s ease;z-index:6}
+  .counter{position:absolute;bottom:18px;right:24px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--mute);z-index:5}
+  .hint{position:absolute;bottom:18px;left:24px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--mute);z-index:5}
+
+  /* Typography */
+  h1.display{font-family:'Fraunces',serif;font-weight:400;font-variation-settings:"SOFT" 30;font-size:clamp(48px,7.6vw,128px);line-height:.95;letter-spacing:-.02em;margin:0}
+  h1.display em{font-style:italic;color:var(--harness)}
+  h2.title{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(36px,4.6vw,72px);line-height:1.02;letter-spacing:-.02em;margin:0 0 .4em}
+  h2.title em{font-style:italic;color:var(--harness)}
+  h3.kicker{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin:0 0 18px;font-weight:500}
+  p.lede{font-family:'Fraunces',serif;font-size:clamp(20px,2.1vw,32px);line-height:1.35;max-width:24ch;color:var(--ink-2);font-weight:300}
+  p.body{font-size:clamp(15px,1.15vw,19px);line-height:1.55;color:var(--ink-2);max-width:62ch}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .mute{color:var(--mute)}
+  .inf{color:var(--inference)}
+  .har{color:var(--harness)}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
+  .tag.inf{background:var(--inference)}
+  .tag.har{background:var(--harness)}
+
+  /* Reusable */
+  .row{display:flex;gap:48px;align-items:stretch}
+  .col{flex:1;min-width:0}
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .rule{border-top:1px solid var(--rule-strong);padding-top:18px}
+  .center-y{justify-content:center}
+  .grow{flex:1}
+  .footnote{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);letter-spacing:.04em}
+
+  /* Slide 1 — title */
+  .slide-title{justify-content:flex-end}
+  .slide-title .super{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin-bottom:28px}
+  .slide-title .sub{font-family:'Fraunces',serif;font-style:italic;font-size:clamp(20px,2vw,30px);color:var(--ink-2);margin-top:28px;max-width:48ch;font-weight:300}
+  .slide-title .meta{margin-top:auto;padding-top:48px;display:flex;justify-content:space-between;align-items:flex-end;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+
+  /* Slide 2 — quotes */
+  .quotes{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 48px;margin-top:24px}
+  .quote{
+    border-left:2px solid var(--harness);
+    padding:6px 0 6px 20px;
+    font-family:'Fraunces',serif;
+    font-size:clamp(20px,1.9vw,30px);
+    line-height:1.25;
+    font-style:italic;
+    color:var(--ink);
+    font-weight:300;
+  }
+  .quote .verdict{display:block;margin-top:10px;font-family:'JetBrains Mono',monospace;font-style:normal;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+
+  /* Inference card */
+  .infcard{
+    background:#0F1A38;color:#cfd6ea;
+    padding:48px;border-radius:6px;
+    font-family:'JetBrains Mono',monospace;
+    box-shadow:0 30px 80px -40px #000a;
+    position:relative;overflow:hidden;
+  }
+  .infcard .label{font-size:11px;letter-spacing:.2em;color:#8ea1d4;text-transform:uppercase;margin-bottom:24px}
+  .infcard pre{margin:0;font-size:clamp(14px,1.05vw,17px);line-height:1.55;color:#e6ecf9}
+  .infcard .k{color:#9bb6ff}
+  .infcard .v{color:#ffd1a8}
+  .infcard .c{color:#6e7faa;font-style:italic}
+
+  /* Cant-do list */
+  .cantgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;margin-top:24px;border-top:1px solid var(--rule-strong)}
+  .cantgrid > div{padding:18px 0;border-bottom:1px solid var(--rule-strong);display:flex;align-items:center;gap:14px}
+  .cantgrid > div:nth-child(odd){padding-right:24px}
+  .cantgrid > div:nth-child(even){padding-left:24px;border-left:1px solid var(--rule-strong)}
+  .cant-icon{width:22px;height:22px;border-radius:50%;background:var(--harness-soft);color:var(--harness);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;flex-shrink:0}
+  .cant-text{font-family:'Fraunces',serif;font-size:clamp(18px,1.5vw,24px);font-weight:300}
+
+  /* Split diagram */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:32px;border:1px solid var(--rule-strong)}
+  .split > div{padding:28px}
+  .split-left{border-right:1px solid var(--rule-strong);background:var(--harness-soft)}
+  .split-right{background:var(--inference-soft)}
+  .split h4{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 16px;font-weight:500}
+  .split-left h4{color:var(--harness)}
+  .split-right h4{color:var(--inference)}
+  .split ul{list-style:none;margin:0;padding:0}
+  .split li{padding:8px 0;font-size:clamp(14px,1vw,17px);color:var(--ink);border-bottom:1px dashed #1614101a;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .split li:last-child{border-bottom:none}
+  .split li .what{font-family:'Fraunces',serif;font-weight:400}
+  .split li .note{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mute);letter-spacing:.05em}
+
+  /* Harness grid */
+  .harnesses{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}
+  .hcard{
+    border:1px solid var(--rule-strong);
+    padding:20px;
+    background:var(--paper-2);
+    display:flex;flex-direction:column;gap:6px;
+    min-height:130px;
+  }
+  .hcard .hname{font-family:'Fraunces',serif;font-size:clamp(18px,1.5vw,24px);font-weight:500;line-height:1.1}
+  .hcard .htype{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+  .hcard .hdesc{font-size:13px;line-height:1.4;color:var(--ink-2);margin-top:4px}
+  .hcard.diy{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .hcard.diy .htype{color:#a09a8a}
+  .hcard.diy .hdesc{color:#c2bba6}
+
+  /* Sequence */
+  .seq{display:flex;gap:0;margin-top:24px;align-items:stretch}
+  .step{flex:1;padding:24px;border-right:1px solid var(--rule-strong);position:relative;background:var(--paper-2)}
+  .step:last-child{border-right:none}
+  .step .n{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--mute);margin-bottom:10px}
+  .step .who{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#fff;padding:2px 7px;border-radius:3px;margin-bottom:12px}
+  .step .who.h{background:var(--harness)}
+  .step .who.m{background:var(--inference)}
+  .step .who.u{background:var(--ink)}
+  .step .what{font-family:'Fraunces',serif;font-size:clamp(15px,1.2vw,19px);line-height:1.3;font-weight:400}
+  .step .what .mono{font-size:.85em;background:#1614100d;padding:1px 5px;border-radius:3px}
+
+  /* Tool call roundtrip */
+  .roundtrip{display:grid;grid-template-columns:1fr auto 1fr;gap:32px;margin-top:24px;align-items:center}
+  .actor{padding:28px;border:1px solid var(--rule-strong)}
+  .actor.h{background:var(--harness-soft);border-color:#C95A1E55}
+  .actor.m{background:var(--inference-soft);border-color:#2A4FB855}
+  .actor h5{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 16px;font-weight:500}
+  .actor.h h5{color:var(--harness)}
+  .actor.m h5{color:var(--inference)}
+  .actor ul{list-style:none;margin:0;padding:0}
+  .actor li{padding:6px 0;font-family:'Fraunces',serif;font-size:clamp(15px,1.15vw,19px);font-weight:300;color:var(--ink)}
+  .arrows{display:flex;flex-direction:column;gap:24px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);letter-spacing:.1em}
+  .arrows .ar{display:flex;align-items:center;gap:8px}
+  .arrows svg{display:block}
+
+  /* Code block */
+  .code{
+    background:#0F1A38;color:#e6ecf9;padding:32px;border-radius:6px;
+    font-family:'JetBrains Mono',monospace;font-size:clamp(12px,.95vw,15px);line-height:1.6;
+    overflow:auto;
+    box-shadow:0 30px 80px -40px #000a;
+  }
+  .code .k{color:#9bb6ff}
+  .code .s{color:#ffd1a8}
+  .code .c{color:#6e7faa;font-style:italic}
+  .code .n{color:#a8e6cf}
+  .code .f{color:#ffaee0}
+
+  /* Layers diagram (production harness) */
+  .layers{display:flex;flex-direction:column;gap:6px;margin-top:24px}
+  .layer{
+    display:grid;grid-template-columns:200px 1fr auto;
+    gap:24px;align-items:center;
+    padding:14px 18px;
+    background:var(--paper-2);
+    border-left:3px solid var(--harness);
+  }
+  .layer .lname{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+  .layer .ldesc{font-size:14px;color:var(--ink-2);line-height:1.4}
+  .layer .ltag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase}
+  .layer.core{border-left-color:var(--inference);background:var(--inference-soft)}
+  .layer.core .lname{color:var(--inference)}
+
+  /* Final */
+  .big-takeaway{font-family:'Fraunces',serif;font-size:clamp(36px,4.4vw,72px);line-height:1.04;letter-spacing:-.015em;font-weight:300;max-width:22ch}
+  .big-takeaway em{font-style:italic;color:var(--harness)}
+  .small-takeaway{font-family:'Fraunces',serif;font-size:clamp(18px,1.6vw,26px);line-height:1.35;color:#c2bba6;max-width:42ch;margin-top:32px;font-weight:300}
+
+  /* Diagram: brain box */
+  .brainbox{display:grid;grid-template-columns:1fr;gap:14px;margin-top:8px}
+
+  /* Pull quote big numbers */
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:24px;border-top:1px solid var(--rule-strong);padding-top:24px}
+  .stat .num{font-family:'Fraunces',serif;font-size:clamp(48px,5.5vw,84px);line-height:1;font-weight:300;letter-spacing:-.02em}
+  .stat .num.inf{color:var(--inference)}
+  .stat .num.har{color:var(--harness)}
+  .stat .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-top:10px}
+  .stat .desc{font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.4;max-width:30ch}
+
+  /* Skill flow diagram */
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:24px;align-items:stretch}
+  .flow .box{padding:18px;background:var(--paper-2);border:1px solid var(--rule-strong);display:flex;flex-direction:column;gap:6px;position:relative}
+  .flow .box.h{background:var(--harness-soft);border-color:#C95A1E55}
+  .flow .box.m{background:var(--inference-soft);border-color:#2A4FB855}
+  .flow .who{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .flow .box.h .who{color:var(--harness)}
+  .flow .box.m .who{color:var(--inference)}
+  .flow .act{font-family:'Fraunces',serif;font-size:clamp(14px,1vw,17px);line-height:1.3;font-weight:400}
+  .flow .arr{position:absolute;right:-12px;top:50%;transform:translateY(-50%);z-index:2;background:var(--paper);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--rule-strong);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute)}
+  .flow .box:last-child .arr{display:none}
+
+  /* Hook timeline */
+  .timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:24px;border-top:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong)}
+  .tev{padding:18px 14px;border-right:1px solid var(--rule-strong);display:flex;flex-direction:column;gap:6px;min-height:140px}
+  .tev:last-child{border-right:none}
+  .tev .name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--harness);letter-spacing:.05em}
+  .tev .when{font-family:'Fraunces',serif;font-size:14px;line-height:1.3;color:var(--ink-2);font-weight:300}
+  .tev .ex{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mute);margin-top:auto;line-height:1.4}
+
+  /* Smaller helpers */
+  .pill{display:inline-block;padding:3px 9px;border:1px solid var(--rule-strong);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);letter-spacing:.06em}
+
+  /* Responsive guard */
+  @media (max-width:900px){
+    .slide{padding:48px 32px}
+    .quotes,.harnesses,.split,.roundtrip,.flow,.timeline,.stat-row,.cantgrid{grid-template-columns:1fr !important}
+    .roundtrip{grid-template-columns:1fr !important}
+    .arrows{flex-direction:row}
+    .seq{flex-direction:column}
+    .step{border-right:none;border-bottom:1px solid var(--rule-strong)}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <div class="progress" id="progress"></div>
+
+  <!-- 1. TITLE -->
+  <section class="slide slide-title active">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Inference vs Harness</span></div><span>Field guide · 2026</span></div>
+    <div class="super">A field guide for engineers</div>
+    <h1 class="display">Inference is<br/>not a <em>harness</em>.</h1>
+    <p class="sub">Most "AI capabilities" people argue about belong to the program around the model — not the model itself. This deck draws the line, and shows you how to redraw it for your own tools.</p>
+    <div class="meta"><span>15 slides · ~10 min</span><span>Use → ↑ ↓ ← Space</span></div>
+  </section>
+
+  <!-- 2. THE CONFUSION -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The confusion</span></div><span>02</span></div>
+    <h3 class="kicker">You've heard things like</h3>
+    <h2 class="title">Five sentences,<br/>all subtly <em>wrong</em>.</h2>
+    <div class="quotes">
+      <div class="quote">"Claude has skills now."<span class="verdict">→ The harness loads skills. The model just reads them.</span></div>
+      <div class="quote">"GPT can use tools."<span class="verdict">→ Models emit tool calls. The harness runs them.</span></div>
+      <div class="quote">"The model remembered our conversation."<span class="verdict">→ Models are stateless. The harness replayed history.</span></div>
+      <div class="quote">"ChatGPT decided to search the web."<span class="verdict">→ The harness exposes a search tool the model can call.</span></div>
+      <div class="quote">"My agent spawned a subagent."<span class="verdict">→ Your harness spawned another inference call.</span></div>
+    </div>
+  </section>
+
+  <!-- 3. WHAT IS INFERENCE -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference is</span></div><span>03</span></div>
+    <div class="row" style="flex:1;align-items:center">
+      <div class="col stack" style="max-width:46%">
+        <h3 class="kicker"><span class="tag inf">Inference</span></h3>
+        <h2 class="title">A pure function.<br/>Tokens in,<br/>tokens out.</h2>
+        <p class="body">An inference call is one HTTP request. You hand the model a list of messages and a model name. It hands you back the next message. That's the entire surface area.</p>
+        <p class="body mute">No memory between calls. No filesystem. No network. No ability to wait, loop, or decide "let me check on that later." It is a function — and like all pure functions, it does exactly one thing.</p>
+      </div>
+      <div class="col">
+        <div class="infcard">
+          <div class="label">// the entire model API</div>
+<pre><span class="c">// stateless. pure. forgets everything after returning.</span>
+<span class="k">function</span> <span class="v">inference</span>(
+  messages: <span class="k">Message</span>[],
+  tools?: <span class="k">Tool</span>[],
+  system?: <span class="k">string</span>,
+): <span class="k">Promise</span>&lt;<span class="v">AssistantMessage</span>&gt;
+
+<span class="c">// that's it. that's the model.</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. WHAT INFERENCE CANT DO -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference cannot do</span></div><span>04</span></div>
+    <h3 class="kicker">Things the model literally cannot do</h3>
+    <h2 class="title">If you've ever seen an AI<br/>do any of this — it wasn't <em>the model</em>.</h2>
+    <div class="cantgrid">
+      <div><span class="cant-icon">✕</span><span class="cant-text">Read a file from your disk</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Run a shell command</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Remember yesterday's session</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Call an HTTP endpoint</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Wait for a build to finish</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Loop until a condition is met</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Trigger another model call</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Enforce a permission policy</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Compact its own context</span></div>
+      <div><span class="cant-icon">✕</span><span class="cant-text">Schedule a future task</span></div>
+    </div>
+    <p class="footnote" style="margin-top:24px">Each of these is a harness responsibility. The model can <em>ask</em> for them — by emitting structured tool calls — but it cannot <em>do</em> them.</p>
+  </section>
+
+  <!-- 5. WHAT IS A HARNESS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What a harness is</span></div><span>05</span></div>
+    <div class="row" style="flex:1;align-items:center">
+      <div class="col stack" style="max-width:46%">
+        <h3 class="kicker"><span class="tag har">Harness</span></h3>
+        <h2 class="title">The program<br/>around the model.</h2>
+        <p class="body">A harness is everything that turns a stateless function into something that <em>feels alive</em>: a conversation loop, tool execution, file I/O, context management, permission gates, hooks, plugins, and the orchestration of one or many inference calls.</p>
+        <p class="body mute">The same model running in two different harnesses behaves like two different products. The model didn't change — the program around it did.</p>
+      </div>
+      <div class="col">
+        <svg viewBox="0 0 520 420" style="width:100%;height:auto">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#16131015" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="520" height="420" fill="url(#grid)"/>
+
+          <!-- Harness outer ring -->
+          <rect x="20" y="20" width="480" height="380" rx="8" fill="#C95A1E10" stroke="#C95A1E" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="40" y="48" font-family="JetBrains Mono" font-size="11" letter-spacing="2" fill="#C95A1E">HARNESS</text>
+
+          <!-- Inference inner -->
+          <rect x="170" y="160" width="180" height="100" rx="4" fill="#2A4FB8" stroke="#2A4FB8"/>
+          <text x="260" y="200" font-family="JetBrains Mono" font-size="11" letter-spacing="2" text-anchor="middle" fill="#fff">INFERENCE</text>
+          <text x="260" y="222" font-family="Fraunces" font-size="14" font-style="italic" text-anchor="middle" fill="#cfd6ea">stateless · pure</text>
+
+          <!-- Harness components -->
+          <g font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#16130E">
+            <rect x="50" y="80" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="100" y="103" text-anchor="middle">CONV LOOP</text>
+
+            <rect x="170" y="80" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="220" y="103" text-anchor="middle">TOOL EXEC</text>
+
+            <rect x="290" y="80" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="340" y="103" text-anchor="middle">CONTEXT MGMT</text>
+
+            <rect x="410" y="80" width="80" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="450" y="103" text-anchor="middle">HOOKS</text>
+
+            <rect x="50" y="290" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="100" y="313" text-anchor="middle">PERMISSIONS</text>
+
+            <rect x="170" y="290" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="220" y="313" text-anchor="middle">SKILLS</text>
+
+            <rect x="290" y="290" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="340" y="313" text-anchor="middle">SUBAGENTS</text>
+
+            <rect x="410" y="290" width="80" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="450" y="313" text-anchor="middle">PLUGINS</text>
+
+            <rect x="50" y="180" width="80" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="90" y="203" text-anchor="middle">FS I/O</text>
+
+            <rect x="390" y="180" width="100" height="38" fill="#F4EFE6" stroke="#16131022"/>
+            <text x="440" y="203" text-anchor="middle">MCP / NET</text>
+          </g>
+
+          <!-- arrows in/out of inference -->
+          <g stroke="#16130E66" stroke-width="1.5" fill="none">
+            <path d="M 130 200 L 168 208" marker-end="url(#ah)"/>
+            <path d="M 352 212 L 388 200" marker-end="url(#ah)"/>
+          </g>
+          <defs>
+            <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L6,4 L0,8 z" fill="#16130E66"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. THE SPLIT -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The split</span></div><span>06</span></div>
+    <h3 class="kicker">A line you can draw with a ruler</h3>
+    <h2 class="title">What lives <em class="har">where</em>.</h2>
+    <div class="split">
+      <div class="split-left">
+        <h4>◉ Lives in the harness</h4>
+        <ul>
+          <li><span class="what">The conversation loop</span><span class="note">code</span></li>
+          <li><span class="what">Tool execution</span><span class="note">code</span></li>
+          <li><span class="what">Reading & writing files</span><span class="note">code</span></li>
+          <li><span class="what">Loading skills, plugins, MCP</span><span class="note">code</span></li>
+          <li><span class="what">Hooks (PreToolUse, Stop, …)</span><span class="note">code</span></li>
+          <li><span class="what">Spawning subagents</span><span class="note">code</span></li>
+          <li><span class="what">Permission gates</span><span class="note">code</span></li>
+          <li><span class="what">Context compaction & memory</span><span class="note">code</span></li>
+          <li><span class="what">Streaming, retry, billing, logs</span><span class="note">code</span></li>
+          <li><span class="what">Scheduling, background tasks</span><span class="note">code</span></li>
+        </ul>
+      </div>
+      <div class="split-right">
+        <h4>◉ Lives in the model</h4>
+        <ul>
+          <li><span class="what">Reading the messages so far</span><span class="note">weights</span></li>
+          <li><span class="what">Following instructions</span><span class="note">weights</span></li>
+          <li><span class="what">Choosing which tool to call</span><span class="note">weights</span></li>
+          <li><span class="what">Writing the next tokens</span><span class="note">weights</span></li>
+          <li><span class="what">Knowing things from training</span><span class="note">weights</span></li>
+          <li><span class="what">Reasoning across given context</span><span class="note">weights</span></li>
+        </ul>
+        <p class="footnote" style="margin-top:20px">Six things. That's the model's whole job.<br/>Everything else is your code.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. TYPES OF HARNESSES -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Harnesses in the wild</span></div><span>07</span></div>
+    <h3 class="kicker">Same models. Different programs.</h3>
+    <h2 class="title">The harnesses you've<br/>probably used <em>this week</em>.</h2>
+    <div class="harnesses">
+      <div class="hcard"><div class="htype">Terminal · agentic</div><div class="hname">Claude Code</div><div class="hdesc">CLI. Skills, hooks, plugins, subagents, MCP, background tasks.</div></div>
+      <div class="hcard"><div class="htype">IDE · inline</div><div class="hname">Cursor / Windsurf</div><div class="hdesc">VSCode forks. Tab-complete, multi-file edits, repo-wide context.</div></div>
+      <div class="hcard"><div class="htype">Web · chat</div><div class="hname">ChatGPT / Claude.ai</div><div class="hdesc">Browser chat. Files, search, custom GPTs, projects.</div></div>
+      <div class="hcard"><div class="htype">IDE · plugin</div><div class="hname">GitHub Copilot</div><div class="hdesc">Inline completion + chat. Inside editors, browsers, the CLI.</div></div>
+      <div class="hcard"><div class="htype">Terminal · agentic</div><div class="hname">Aider</div><div class="hdesc">Git-aware pair programmer. Repo map, edit modes, voice.</div></div>
+      <div class="hcard"><div class="htype">IDE · open source</div><div class="hname">Cline / Continue</div><div class="hdesc">Open-source agentic plugins. BYO model and tools.</div></div>
+      <div class="hcard"><div class="htype">Terminal · agentic</div><div class="hname">Goose / Open Interpreter</div><div class="hdesc">Local-first agents. Run code, control desktops, manage files.</div></div>
+      <div class="hcard diy"><div class="htype">Yours · 50 lines</div><div class="hname">Your custom script</div><div class="hdesc">A Python file that calls the SDK in a loop. This counts.</div></div>
+    </div>
+    <p class="footnote" style="margin-top:24px">All of these can run the <em>same</em> Claude Opus 4.7 or GPT-5 underneath. The experience differs entirely because of harness design.</p>
+  </section>
+
+  <!-- 8. SKILLS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where skills live</span></div><span>08</span></div>
+    <h3 class="kicker">Skills</h3>
+    <h2 class="title">A skill is a <em>markdown file</em><br/>that the harness loads.</h2>
+    <p class="body">When you type <span class="mono">/pdf</span>, the model does not know what <span class="mono">/pdf</span> means. The harness does. The harness reads the skill file, injects it into the next inference call, and the model — now seeing those instructions for the first time — follows them.</p>
+    <div class="flow">
+      <div class="box"><div class="who">USER</div><div class="act">Types <span class="mono">/pdf merge a.pdf b.pdf</span></div><div class="arr">→</div></div>
+      <div class="box h"><div class="who">HARNESS</div><div class="act">Resolves <span class="mono">/pdf</span> → reads <span class="mono">skills/pdf/SKILL.md</span></div><div class="arr">→</div></div>
+      <div class="box h"><div class="who">HARNESS</div><div class="act">Injects skill content + user args into messages</div><div class="arr">→</div></div>
+      <div class="box m"><div class="who">MODEL</div><div class="act">Sees skill for the first time. Decides which tools to call.</div><div class="arr">→</div></div>
+      <div class="box h"><div class="who">HARNESS</div><div class="act">Executes <span class="mono">Bash</span>, <span class="mono">Read</span>, <span class="mono">Write</span>. Returns results.</div></div>
+    </div>
+    <p class="footnote" style="margin-top:28px">Take the skill file away and the "skill" vanishes. The model's weights are unchanged.</p>
+  </section>
+
+  <!-- 9. AGENTS / SUBAGENTS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where agents live</span></div><span>09</span></div>
+    <h3 class="kicker">Agents & subagents</h3>
+    <h2 class="title">An "agent" is just a <em>configuration</em><br/>the harness applies to an inference call.</h2>
+    <div class="row" style="margin-top:24px;gap:48px">
+      <div class="col stack">
+        <p class="body">A subagent is not a separate AI. It is the same model, called by the same SDK — but the harness:</p>
+        <ul style="font-family:'Fraunces',serif;font-size:clamp(16px,1.3vw,21px);line-height:1.5;font-weight:300;color:var(--ink-2);padding-left:18px;margin:0">
+          <li>Swaps in a different system prompt</li>
+          <li>Restricts the available tools</li>
+          <li>Starts with an empty message history</li>
+          <li>Returns only the final message to the parent loop</li>
+        </ul>
+        <p class="body mute">That's the entire mechanism. Orchestration — when to spawn, how to merge results, whether to run them in parallel — is harness code. The model has no concept of "I am a subagent."</p>
+      </div>
+      <div class="col">
+        <div class="code">
+<span class="c"># a subagent, demystified</span>
+<span class="k">def</span> <span class="f">spawn_subagent</span>(task, agent_type=<span class="s">"explore"</span>):
+    cfg = harness.<span class="f">load_agent</span>(agent_type)
+    <span class="c"># cfg = { system_prompt, allowed_tools, model }</span>
+
+    result = sdk.<span class="f">messages.create</span>(
+        model=cfg.model,
+        system=cfg.system_prompt,
+        tools=cfg.allowed_tools,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: task}],
+    )
+
+    <span class="k">return</span> result.content  <span class="c"># parent loop continues</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. PLUGINS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where plugins live</span></div><span>10</span></div>
+    <h3 class="kicker">Plugins</h3>
+    <h2 class="title">Plugins extend the <em>harness</em>,<br/>not the model.</h2>
+    <p class="body">A plugin is a bundle the harness loads at startup. It can register new commands, new tools, new subagents, new hooks, new MCP servers, new keyboard shortcuts. The model never "installs" anything — it just sees the resulting tool list in the next inference call.</p>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num har">0</div>
+        <div class="lbl">bytes the model loads</div>
+        <div class="desc">Models do not download, parse, or install plugin code. Ever.</div>
+      </div>
+      <div class="stat">
+        <div class="num har">N</div>
+        <div class="lbl">tools the harness adds</div>
+        <div class="desc">Plugin tools appear in the <span class="mono">tools</span> parameter of inference calls. To the model, they look identical to built-ins.</div>
+      </div>
+      <div class="stat">
+        <div class="num inf">1</div>
+        <div class="lbl">model, unchanged</div>
+        <div class="desc">Swap your model from Opus to Sonnet — every plugin keeps working. They were never tied to weights.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. HOOKS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where hooks live</span></div><span>11</span></div>
+    <h3 class="kicker">Hooks</h3>
+    <h2 class="title">Hooks fire on <em>harness</em> events.<br/>The model never sees them.</h2>
+    <p class="body">A hook is a shell command (or function) the harness runs at a specific point in its own lifecycle. The model isn't even told it happened — unless the harness chooses to surface the output as a tool result or a system message.</p>
+    <div class="timeline">
+      <div class="tev"><span class="name">UserPromptSubmit</span><span class="when">After user hits enter, before inference is called.</span><span class="ex">e.g. block secrets in prompts</span></div>
+      <div class="tev"><span class="name">PreToolUse</span><span class="when">Model asked to run a tool. Harness can approve, block, or rewrite.</span><span class="ex">e.g. require approval for <span style="color:var(--harness)">rm</span></span></div>
+      <div class="tev"><span class="name">PostToolUse</span><span class="when">Tool finished running. Harness has the result in hand.</span><span class="ex">e.g. auto-format edits</span></div>
+      <div class="tev"><span class="name">Notification</span><span class="when">Harness wants user attention (idle, waiting on input).</span><span class="ex">e.g. ping Slack</span></div>
+      <div class="tev"><span class="name">Stop</span><span class="when">Turn ended. Useful for logging, lint, status updates.</span><span class="ex">e.g. run tests</span></div>
+      <div class="tev"><span class="name">SubagentStop</span><span class="when">Subagent returned. Parent loop about to resume.</span><span class="ex">e.g. audit subagent diffs</span></div>
+    </div>
+    <p class="footnote" style="margin-top:24px">If you find yourself wishing "the model would always X before doing Y" — that is a hook, in your harness. Not a model retraining job.</p>
+  </section>
+
+  <!-- 12. TOOLS — the bridge -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The bridge</span></div><span>12</span></div>
+    <h3 class="kicker">Tools — the only thing crossing the line</h3>
+    <h2 class="title">Tool calls are how the model<br/><em>asks</em> the harness to act.</h2>
+    <div class="roundtrip">
+      <div class="actor h">
+        <h5>◉ Harness owns</h5>
+        <ul>
+          <li>Defining tool schemas</li>
+          <li>Exposing them to the model</li>
+          <li>Receiving <span class="mono">tool_use</span> blocks</li>
+          <li>Executing them safely</li>
+          <li>Returning <span class="mono">tool_result</span></li>
+          <li>Looping until done</li>
+        </ul>
+      </div>
+      <div class="arrows">
+        <div class="ar"><span>tool_use</span>
+          <svg width="60" height="14" viewBox="0 0 60 14"><path d="M 0 7 L 54 7" stroke="#16130E66" stroke-width="1.5"/><path d="M 54 2 L 60 7 L 54 12" fill="#16130E66"/></svg>
+        </div>
+        <div class="ar">
+          <svg width="60" height="14" viewBox="0 0 60 14"><path d="M 60 7 L 6 7" stroke="#16130E66" stroke-width="1.5"/><path d="M 6 2 L 0 7 L 6 12" fill="#16130E66"/></svg>
+          <span>tool_result</span>
+        </div>
+      </div>
+      <div class="actor m">
+        <h5>◉ Model owns</h5>
+        <ul>
+          <li>Reading the conversation</li>
+          <li>Choosing whether to call a tool</li>
+          <li>Choosing which tool</li>
+          <li>Filling in arguments</li>
+          <li>Reading tool results</li>
+          <li>Deciding what to do next</li>
+        </ul>
+      </div>
+    </div>
+    <p class="footnote" style="margin-top:32px">This is the entire contract. The model proposes. The harness disposes.</p>
+  </section>
+
+  <!-- 13. BUILD YOUR OWN — minimal -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Build your own</span></div><span>13</span></div>
+    <h3 class="kicker">A harness in ~40 lines</h3>
+    <h2 class="title">It really is <em>this small</em>.</h2>
+    <div class="row" style="gap:32px;flex:1;align-items:stretch">
+      <div class="col" style="flex:1.4">
+        <div class="code">
+<span class="k">import</span> anthropic, subprocess
+client = anthropic.<span class="f">Anthropic</span>()
+
+TOOLS = [{
+  <span class="s">"name"</span>: <span class="s">"bash"</span>,
+  <span class="s">"description"</span>: <span class="s">"Run a shell command"</span>,
+  <span class="s">"input_schema"</span>: {<span class="s">"type"</span>:<span class="s">"object"</span>,
+    <span class="s">"properties"</span>:{<span class="s">"cmd"</span>:{<span class="s">"type"</span>:<span class="s">"string"</span>}},
+    <span class="s">"required"</span>:[<span class="s">"cmd"</span>]}
+}]
+
+messages = []
+<span class="k">while</span> <span class="n">True</span>:
+    user = <span class="f">input</span>(<span class="s">"&gt; "</span>)
+    messages.<span class="f">append</span>({<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:user})
+
+    <span class="k">while</span> <span class="n">True</span>:
+        r = client.messages.<span class="f">create</span>(
+            model=<span class="s">"claude-opus-4-7"</span>,
+            max_tokens=<span class="n">4096</span>,
+            tools=TOOLS,
+            messages=messages,
+        )
+        messages.<span class="f">append</span>({<span class="s">"role"</span>:<span class="s">"assistant"</span>,<span class="s">"content"</span>:r.content})
+
+        <span class="k">if</span> r.stop_reason != <span class="s">"tool_use"</span>: <span class="k">break</span>
+
+        results = []
+        <span class="k">for</span> block <span class="k">in</span> r.content:
+            <span class="k">if</span> block.type == <span class="s">"tool_use"</span>:
+                out = subprocess.<span class="f">run</span>(block.input[<span class="s">"cmd"</span>],
+                    shell=<span class="n">True</span>, capture_output=<span class="n">True</span>, text=<span class="n">True</span>)
+                results.<span class="f">append</span>({<span class="s">"type"</span>:<span class="s">"tool_result"</span>,
+                    <span class="s">"tool_use_id"</span>:block.id,
+                    <span class="s">"content"</span>:out.stdout + out.stderr})
+        messages.<span class="f">append</span>({<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:results})
+
+    <span class="f">print</span>(r.content[<span class="n">-1</span>].text)</div>
+      </div>
+      <div class="col stack" style="flex:1;justify-content:center">
+        <p class="body">That file is a complete agentic coding harness. Drop it on a server. Point it at a repo. It will read, write, run commands, debug, and iterate.</p>
+        <p class="body">Notice what isn't there: no fine-tuning, no special model, no proprietary API. Just <span class="mono">messages.create</span> in a loop and a <span class="mono">subprocess.run</span> for the tool.</p>
+        <p class="body mute">Every "AI coding tool" you have heard of is some elaboration on these 40 lines.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14. BUILD YOUR OWN — production -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Production harness</span></div><span>14</span></div>
+    <h3 class="kicker">What separates a toy from a tool</h3>
+    <h2 class="title">From 40 lines to a real <em>harness</em>.</h2>
+    <div class="layers">
+      <div class="layer core"><div class="lname">Inference SDK</div><div class="ldesc">The model call. One function. Untouched from the 40-line version.</div><div class="ltag">CORE · DON'T REINVENT</div></div>
+      <div class="layer"><div class="lname">Conversation loop</div><div class="ldesc">Streaming, retry & backoff, prompt caching, model fallback, cost & token accounting.</div><div class="ltag">LAYER 1</div></div>
+      <div class="layer"><div class="lname">Tool registry</div><div class="ldesc">Pluggable tools, schema validation, sandboxed exec, timeouts, output truncation.</div><div class="ltag">LAYER 2</div></div>
+      <div class="layer"><div class="lname">Context management</div><div class="ldesc">Window budgeting, auto-compaction, message summarization, memory file persistence.</div><div class="ltag">LAYER 3</div></div>
+      <div class="layer"><div class="lname">Permission system</div><div class="ldesc">Allow/deny rules, per-tool prompts, project-scoped settings, dangerous-action gates.</div><div class="ltag">LAYER 4</div></div>
+      <div class="layer"><div class="lname">Extension surface</div><div class="ldesc">Skills loader, plugin manager, MCP client, subagent runner, hook dispatcher.</div><div class="ltag">LAYER 5</div></div>
+      <div class="layer"><div class="lname">Orchestration</div><div class="ldesc">Background tasks, scheduled runs, parallel subagents, notifications, observability.</div><div class="ltag">LAYER 6</div></div>
+      <div class="layer"><div class="lname">Interface</div><div class="ldesc">TUI / IDE / web / API. Keyboard, theming, transcript export, IDE integration.</div><div class="ltag">LAYER 7</div></div>
+    </div>
+    <p class="footnote" style="margin-top:20px">Every layer above the core is something <em>you</em> choose to build. None of it changes the model.</p>
+  </section>
+
+  <!-- 15. TAKEAWAY -->
+  <section class="slide dark">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The takeaway</span></div><span>15 · END</span></div>
+    <div style="margin:auto 0;max-width:60ch">
+      <h3 class="kicker" style="color:#8e8775">Remember this</h3>
+      <p class="big-takeaway">
+        The model is a <em>function</em>.<br/>
+        Everything you love<br/>
+        about your AI tool<br/>
+        is the <em>harness</em>.
+      </p>
+      <p class="small-takeaway">
+        Want different behavior? Don't wait for a new model. Change the harness — add a skill, write a hook, register a tool, swap the system prompt. The lever you're looking for is almost always on your side of the line.
+      </p>
+    </div>
+    <div class="hint" style="color:#8e8775">← / → to navigate · press <span class="mono">G</span> to jump to start</div>
+  </section>
+
+  <div class="counter" id="counter">01 / 15</div>
+  <div class="hint" id="hint">← / → to navigate · Space · Home / End</div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const hint = document.getElementById('hint');
+  let i = 0;
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (n === i) return;
+    slides[i].classList.remove('active');
+    i = n;
+    slides[i].classList.add('active');
+    counter.textContent = pad(i + 1) + ' / ' + pad(slides.length);
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    // hide hint on the last slide so it doesn't overlap the dark CTA
+    hint.style.opacity = (i === slides.length - 1) ? '0' : '1';
+  }
+  go(0);
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home' || e.key === 'g' || e.key === 'G') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+  });
+
+  // Click to advance (but not on links / inputs)
+  document.addEventListener('click', e => {
+    if (e.target.closest('a, button, input, textarea')) return;
+    const x = e.clientX, w = window.innerWidth;
+    if (x < w * 0.25) go(i - 1); else go(i + 1);
+  });
+</script>
+</body>
+</html>
