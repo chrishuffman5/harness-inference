@@ -244,6 +244,58 @@
   .tev .when{font-family:'Fraunces',serif;font-size:14px;line-height:1.3;color:var(--ink-2);font-weight:300}
   .tev .ex{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mute);margin-top:auto;line-height:1.4}
 
+  /* Definition slides */
+  .def-edition{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+    border:1px solid var(--rule-strong);padding:6px 12px;border-radius:3px;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .def-edition::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mute)}
+  .def-headrow{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .def-head{display:flex;align-items:baseline;gap:32px;margin-top:32px;flex-wrap:wrap}
+  .def-word{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+    font-size:clamp(80px,11vw,180px);line-height:.92;letter-spacing:-.03em;
+    margin:0;
+  }
+  .def-word.inf{color:var(--inference)}
+  .def-word.har{color:var(--harness)}
+  .def-meta{display:flex;flex-direction:column;gap:6px;padding-bottom:14px}
+  .def-pron{font-family:'JetBrains Mono',monospace;font-size:clamp(15px,1.3vw,20px);color:var(--ink-2)}
+  .def-pos{font-family:'Fraunces',serif;font-style:italic;font-size:clamp(14px,1.1vw,19px);color:var(--mute)}
+  .def-body{display:grid;grid-template-columns:1.5fr 1fr;gap:56px;margin-top:48px;border-top:1px solid var(--rule-strong);padding-top:32px}
+  .def-numbered{display:flex;flex-direction:column;gap:22px}
+  .def-num-item{display:grid;grid-template-columns:42px 1fr;gap:8px;align-items:baseline}
+  .def-num{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:clamp(22px,2vw,32px);color:var(--mute);line-height:1;
+  }
+  .def-text{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(17px,1.4vw,23px);line-height:1.4;color:var(--ink);
+    margin:0;
+  }
+  .def-text em{font-style:italic;color:var(--harness)}
+  .def-text.inf-em em{color:var(--inference)}
+  .def-side{
+    border-left:1px solid var(--rule-strong);padding-left:32px;
+    display:flex;flex-direction:column;gap:24px;
+  }
+  .def-side h6{
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--mute);
+    margin:0 0 10px;font-weight:500;
+  }
+  .def-side p{
+    margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);
+  }
+  .def-side p em{font-style:italic;color:var(--ink)}
+  .def-side .see{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+    font-size:clamp(15px,1.1vw,19px);color:var(--ink);line-height:1.4;
+  }
+
   /* Smaller helpers */
   .pill{display:inline-block;padding:3px 9px;border:1px solid var(--rule-strong);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);letter-spacing:.06em}
 
@@ -269,12 +321,104 @@
     <div class="super">A field guide for engineers</div>
     <h1 class="display">Inference is<br/>not a <em>harness</em>.</h1>
     <p class="sub">Most "AI capabilities" people argue about belong to the program around the model — not the model itself. This deck draws the line, and shows you how to redraw it for your own tools.</p>
-    <div class="meta"><span>15 slides · ~10 min</span><span>Use → ↑ ↓ ← Space</span></div>
+    <div class="meta"><span>17 slides · ~12 min</span><span>Use → ↑ ↓ ← Space</span></div>
   </section>
 
-  <!-- 2. THE CONFUSION -->
+  <!-- 2. DEFINITION — INFERENCE -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>The confusion</span></div><span>02</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Definition · I</span></div><span>02</span></div>
+    <div class="def-headrow">
+      <h3 class="kicker" style="margin:0"><span class="tag inf">Inference</span></h3>
+      <span class="def-edition">May 2026 edition</span>
+    </div>
+    <div class="def-head">
+      <h1 class="def-word inf">inference</h1>
+      <div class="def-meta">
+        <span class="def-pron">/ ˈɪn·fə·rəns /</span>
+        <span class="def-pos">noun · machine learning</span>
+      </div>
+    </div>
+    <div class="def-body">
+      <div class="def-numbered">
+        <div class="def-num-item">
+          <span class="def-num">1.</span>
+          <p class="def-text inf-em">The act of running a trained model on new input to produce output. A single, stateless function call: <em>tokens in, tokens out</em>. Each call is independent — the model retains nothing from prior calls.</p>
+        </div>
+        <div class="def-num-item">
+          <span class="def-num">2.</span>
+          <p class="def-text inf-em">By extension, shorthand for <em>the model itself</em> — the weights plus the API that serves them — as distinct from the program calling it. Heard in phrases like "inference cost," "inference provider," "inference latency."</p>
+        </div>
+        <div class="def-num-item">
+          <span class="def-num">3.</span>
+          <p class="def-text inf-em"><em>Common misuse, 2026:</em> applied loosely to anything an AI does. "The inference decided to search the web." The inference did no such thing; the harness did, after the model emitted a tool call.</p>
+        </div>
+      </div>
+      <div class="def-side">
+        <div>
+          <h6>Etymology</h6>
+          <p>From Latin <em>inferre</em>, "to bring in, conclude." Used in machine learning since the 1980s to distinguish runtime use of a model from training it. In 2026 mainstream usage, frequently and wrongly used as a synonym for the entire AI system.</p>
+        </div>
+        <div>
+          <h6>See also</h6>
+          <p class="see">model · weights · token · context window · pure function · <span class="har">harness</span></p>
+        </div>
+        <div>
+          <h6>Not to be confused with</h6>
+          <p class="see">agent, assistant, AI, chatbot — all of which name the <span class="har">harness</span>, not what's inside it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. DEFINITION — HARNESS -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Definition · II</span></div><span>03</span></div>
+    <div class="def-headrow">
+      <h3 class="kicker" style="margin:0"><span class="tag har">AI Harness</span></h3>
+      <span class="def-edition">May 2026 edition</span>
+    </div>
+    <div class="def-head">
+      <h1 class="def-word har">harness</h1>
+      <div class="def-meta">
+        <span class="def-pron">/ ˈhɑː·nɪs /</span>
+        <span class="def-pos">noun · technical sense, 2024–</span>
+      </div>
+    </div>
+    <div class="def-body">
+      <div class="def-numbered">
+        <div class="def-num-item">
+          <span class="def-num">1.</span>
+          <p class="def-text">The program that wraps one or more inference calls to make them <em>useful</em>: managing the conversation loop, executing tools, enforcing permissions, loading skills and plugins, and orchestrating multi-step work.</p>
+        </div>
+        <div class="def-num-item">
+          <span class="def-num">2.</span>
+          <p class="def-text">Any system sitting between the user and the model. <em>Claude Code, Cursor, ChatGPT, Aider, Cline, Goose</em> — and the forty-line Python script you wrote last night. If it loops over <span class="mono" style="font-size:.82em;background:#1614100d;padding:1px 5px;border-radius:3px">messages.create</span> and runs tool calls, it qualifies.</p>
+        </div>
+        <div class="def-num-item">
+          <span class="def-num">3.</span>
+          <p class="def-text"><em>The lever, in 2026:</em> the part of an AI product an engineer can actually change. New skills, new tools, new hooks, new agents — all harness moves, none of them require touching a model.</p>
+        </div>
+      </div>
+      <div class="def-side">
+        <div>
+          <h6>Etymology</h6>
+          <p>Borrowed metaphorically from the equestrian sense — the rigging that lets a powerful animal do useful work without bolting. Coined in this technical sense around 2024 as agentic tools proliferated. The animal is the <span class="inf">inference</span> call.</p>
+        </div>
+        <div>
+          <h6>See also</h6>
+          <p class="see">agent · skill · plugin · hook · subagent · MCP · tool call · context window · <span class="inf">inference</span></p>
+        </div>
+        <div>
+          <h6>Not to be confused with</h6>
+          <p class="see">the model. The harness can do everything the model cannot — and nothing the model already does.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. THE CONFUSION -->
+  <section class="slide">
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The confusion</span></div><span>04</span></div>
     <h3 class="kicker">You've heard things like</h3>
     <h2 class="title">Five sentences,<br/>all subtly <em>wrong</em>.</h2>
     <div class="quotes">
@@ -288,7 +432,7 @@
 
   <!-- 3. WHAT IS INFERENCE -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference is</span></div><span>03</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference is</span></div><span>05</span></div>
     <div class="row" style="flex:1;align-items:center">
       <div class="col stack" style="max-width:46%">
         <h3 class="kicker"><span class="tag inf">Inference</span></h3>
@@ -314,7 +458,7 @@
 
   <!-- 4. WHAT INFERENCE CANT DO -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference cannot do</span></div><span>04</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What inference cannot do</span></div><span>06</span></div>
     <h3 class="kicker">Things the model literally cannot do</h3>
     <h2 class="title">If you've ever seen an AI<br/>do any of this — it wasn't <em>the model</em>.</h2>
     <div class="cantgrid">
@@ -334,7 +478,7 @@
 
   <!-- 5. WHAT IS A HARNESS -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>What a harness is</span></div><span>05</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>What a harness is</span></div><span>07</span></div>
     <div class="row" style="flex:1;align-items:center">
       <div class="col stack" style="max-width:46%">
         <h3 class="kicker"><span class="tag har">Harness</span></h3>
@@ -410,7 +554,7 @@
 
   <!-- 6. THE SPLIT -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>The split</span></div><span>06</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The split</span></div><span>08</span></div>
     <h3 class="kicker">A line you can draw with a ruler</h3>
     <h2 class="title">What lives <em class="har">where</em>.</h2>
     <div class="split">
@@ -446,7 +590,7 @@
 
   <!-- 7. TYPES OF HARNESSES -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Harnesses in the wild</span></div><span>07</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Harnesses in the wild</span></div><span>09</span></div>
     <h3 class="kicker">Same models. Different programs.</h3>
     <h2 class="title">The harnesses you've<br/>probably used <em>this week</em>.</h2>
     <div class="harnesses">
@@ -464,7 +608,7 @@
 
   <!-- 8. SKILLS -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where skills live</span></div><span>08</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where skills live</span></div><span>10</span></div>
     <h3 class="kicker">Skills</h3>
     <h2 class="title">A skill is a <em>markdown file</em><br/>that the harness loads.</h2>
     <p class="body">When you type <span class="mono">/pdf</span>, the model does not know what <span class="mono">/pdf</span> means. The harness does. The harness reads the skill file, injects it into the next inference call, and the model — now seeing those instructions for the first time — follows them.</p>
@@ -480,7 +624,7 @@
 
   <!-- 9. AGENTS / SUBAGENTS -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where agents live</span></div><span>09</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where agents live</span></div><span>11</span></div>
     <h3 class="kicker">Agents & subagents</h3>
     <h2 class="title">An "agent" is just a <em>configuration</em><br/>the harness applies to an inference call.</h2>
     <div class="row" style="margin-top:24px;gap:48px">
@@ -515,7 +659,7 @@
 
   <!-- 10. PLUGINS -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where plugins live</span></div><span>10</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where plugins live</span></div><span>12</span></div>
     <h3 class="kicker">Plugins</h3>
     <h2 class="title">Plugins extend the <em>harness</em>,<br/>not the model.</h2>
     <p class="body">A plugin is a bundle the harness loads at startup. It can register new commands, new tools, new subagents, new hooks, new MCP servers, new keyboard shortcuts. The model never "installs" anything — it just sees the resulting tool list in the next inference call.</p>
@@ -540,7 +684,7 @@
 
   <!-- 11. HOOKS -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where hooks live</span></div><span>11</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Where hooks live</span></div><span>13</span></div>
     <h3 class="kicker">Hooks</h3>
     <h2 class="title">Hooks fire on <em>harness</em> events.<br/>The model never sees them.</h2>
     <p class="body">A hook is a shell command (or function) the harness runs at a specific point in its own lifecycle. The model isn't even told it happened — unless the harness chooses to surface the output as a tool result or a system message.</p>
@@ -557,7 +701,7 @@
 
   <!-- 12. TOOLS — the bridge -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>The bridge</span></div><span>12</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The bridge</span></div><span>14</span></div>
     <h3 class="kicker">Tools — the only thing crossing the line</h3>
     <h2 class="title">Tool calls are how the model<br/><em>asks</em> the harness to act.</h2>
     <div class="roundtrip">
@@ -598,7 +742,7 @@
 
   <!-- 13. BUILD YOUR OWN — minimal -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Build your own</span></div><span>13</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Build your own</span></div><span>15</span></div>
     <h3 class="kicker">A harness in ~40 lines</h3>
     <h2 class="title">It really is <em>this small</em>.</h2>
     <div class="row" style="gap:32px;flex:1;align-items:stretch">
@@ -653,7 +797,7 @@ messages = []
 
   <!-- 14. BUILD YOUR OWN — production -->
   <section class="slide">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>Production harness</span></div><span>14</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>Production harness</span></div><span>16</span></div>
     <h3 class="kicker">What separates a toy from a tool</h3>
     <h2 class="title">From 40 lines to a real <em>harness</em>.</h2>
     <div class="layers">
@@ -671,7 +815,7 @@ messages = []
 
   <!-- 15. TAKEAWAY -->
   <section class="slide dark">
-    <div class="topbar"><div class="brand"><span class="dot"></span><span>The takeaway</span></div><span>15 · END</span></div>
+    <div class="topbar"><div class="brand"><span class="dot"></span><span>The takeaway</span></div><span>17 · END</span></div>
     <div style="margin:auto 0;max-width:60ch">
       <h3 class="kicker" style="color:#8e8775">Remember this</h3>
       <p class="big-takeaway">
@@ -687,7 +831,7 @@ messages = []
     <div class="hint" style="color:#8e8775">← / → to navigate · press <span class="mono">G</span> to jump to start</div>
   </section>
 
-  <div class="counter" id="counter">01 / 15</div>
+  <div class="counter" id="counter">01 / 17</div>
   <div class="hint" id="hint">← / → to navigate · Space · Home / End</div>
 </div>
 
